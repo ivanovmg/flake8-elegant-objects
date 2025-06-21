@@ -45,7 +45,7 @@ Issues = "https://github.com/AntonProkopyev/flake8-elegant-objects/issues"
 Documentation = "https://github.com/AntonProkopyev/flake8-elegant-objects#readme"
 
 [project.entry-points."flake8.extension"]
-EO = "flake8_elegant_objects:ElegantObjectsViolation"
+EO = "flake8_elegant_objects:ElegantObjectsPlugin"
 
 [project.scripts]
 flake8-elegant-objects = "flake8_elegant_objects:main"
