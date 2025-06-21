@@ -12,8 +12,6 @@ Detects violations of core Elegant Objects principles including the "-er" naming
 
 ## Error Codes
 
-### "-er" Principle Violations
-
 - `EO001`: Class name violates -er principle
 - `EO002`: Method name violates -er principle
 - `EO003`: Variable name violates -er principle
