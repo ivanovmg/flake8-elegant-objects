@@ -4,10 +4,10 @@ import ast
 import re
 from typing import ClassVar
 
-from .base import ElegantObjectsAnalysis, ErrorCodes, Violation
+from .base import ErrorCodes, Principles, Violations
 
 
-class NamingViolations(ElegantObjectsAnalysis):
+class NoErNamePrinciple(Principles):
     """Checks for naming violations in classes, methods, variables, and functions."""
 
     # Hall of shame: common -er suffixes (from elegantobjects.org)
@@ -189,48 +189,51 @@ class NamingViolations(ElegantObjectsAnalysis):
         "user",
     }
 
-    def analyze(self, node: ast.AST) -> list[Violation]:
-        """Analyze node for naming violations."""
-        self._violations = []
+    def check(self, node: ast.AST) -> Violations:
+        """Check node for naming violations."""
+        violations = []
 
         if isinstance(node, ast.ClassDef):
-            self._check_class_name(node)
+            violations.extend(self._check_class_name(node))
         elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-            self._check_function_name(node)
+            violations.extend(self._check_function_name(node))
         elif isinstance(node, ast.Assign):
-            self._check_variable_assignment(node)
+            violations.extend(self._check_variable_assignment(node))
         elif isinstance(node, ast.AnnAssign):
-            self._check_annotated_assignment(node)
+            violations.extend(self._check_annotated_assignment(node))
 
-        return self._violations
+        return violations
 
-    def _check_class_name(self, node: ast.ClassDef) -> None:
+    def _check_class_name(self, node: ast.ClassDef) -> Violations:
         """Check if class name violates -er principle."""
         name = node.name.lower()
 
         # Skip if it's an allowed exception
         if name in self.ALLOWED_EXCEPTIONS:
-            return
+            return []
 
         # Check for -er suffixes (the hall of shame)
         for suffix in self.ER_SUFFIXES:
             if name.endswith(suffix):
-                self._add_violation(node, ErrorCodes.EO001.format(name=node.name))
-                return
+                return self._violation(node, ErrorCodes.EO001.format(name=node.name))
 
         # Check for procedural patterns in compound names
         if self._contains_procedural_pattern(name):
-            self._add_violation(node, ErrorCodes.EO001.format(name=node.name))
+            return self._violation(node, ErrorCodes.EO001.format(name=node.name))
 
-    def _check_function_name(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        return []
+
+    def _check_function_name(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> Violations:
         """Check if function/method name violates -er principle."""
         # Skip special methods (__init__, __str__, etc.)
         if node.name.startswith("_"):
-            return
+            return []
 
         # Skip common property patterns
         if node.name in ("property", "getter", "setter"):
-            return
+            return []
 
         name = node.name.lower()
 
@@ -238,40 +241,46 @@ class NamingViolations(ElegantObjectsAnalysis):
         if self._starts_with_procedural_verb(name):
             # Determine if it's a method or standalone function
             error_code = ErrorCodes.EO002 if self._is_method(node) else ErrorCodes.EO004
-            self._add_violation(node, error_code.format(name=node.name))
+            return self._violation(node, error_code.format(name=node.name))
 
-    def _check_variable_assignment(self, node: ast.Assign) -> None:
+        return []
+
+    def _check_variable_assignment(self, node: ast.Assign) -> Violations:
         """Check variable names in assignments."""
+        violations = []
         for target in node.targets:
             if isinstance(target, ast.Name):
-                self._check_variable_name(target)
+                violations.extend(self._check_variable_name(target))
+        return violations
 
-    def _check_annotated_assignment(self, node: ast.AnnAssign) -> None:
+    def _check_annotated_assignment(self, node: ast.AnnAssign) -> Violations:
         """Check variable names in annotated assignments."""
         if isinstance(node.target, ast.Name):
-            self._check_variable_name(node.target)
+            return self._check_variable_name(node.target)
+        return []
 
-    def _check_variable_name(self, node: ast.Name) -> None:
+    def _check_variable_name(self, node: ast.Name) -> Violations:
         """Check if variable name violates -er principle."""
         # Skip private variables and common patterns
         if node.id.startswith("_") or node.id.isupper():
-            return
+            return []
 
         name = node.id.lower()
 
         # Skip if it's an allowed exception
         if name in self.ALLOWED_EXCEPTIONS:
-            return
+            return []
 
         # Check for -er suffixes
         for suffix in self.ER_SUFFIXES:
             if name.endswith(suffix):
-                self._add_violation(node, ErrorCodes.EO003.format(name=node.id))
-                return
+                return self._violation(node, ErrorCodes.EO003.format(name=node.id))
 
         # Check for procedural verbs as variable names
         if self._starts_with_procedural_verb(name):
-            self._add_violation(node, ErrorCodes.EO003.format(name=node.id))
+            return self._violation(node, ErrorCodes.EO003.format(name=node.id))
+
+        return []
 
     def _contains_procedural_pattern(self, name: str) -> bool:
         """Check if name contains procedural patterns."""

@@ -12,10 +12,10 @@ from typing import Any
 
 from .advanced import AdvancedPrinciples
 from .core import CorePrinciples
-from .naming import NamingViolations
+from .naming import NoErNamePrinciple
 
 
-class ElegantObjectsViolation:
+class ElegantObjectsPlugin:
     """Flake8 plugin to check for Elegant Objects violations."""
 
     name = "flake8-elegant-objects"
@@ -26,7 +26,7 @@ class ElegantObjectsViolation:
         self.errors: list[tuple[int, int, str]] = []
         self._current_class: ast.ClassDef | None = None
 
-    def run(self) -> Iterator[tuple[int, int, str, type["ElegantObjectsViolation"]]]:
+    def run(self) -> Iterator[tuple[int, int, str, type["ElegantObjectsPlugin"]]]:
         """Run the checker and yield errors."""
         self.visit(self.tree)
         for line, col, msg in self.errors:
@@ -35,43 +35,39 @@ class ElegantObjectsViolation:
     def visit(self, node: ast.AST) -> None:
         """Visit AST nodes and check for violations."""
         if isinstance(node, ast.ClassDef):
-            # Store current class context
             previous_class = self._current_class
             self._current_class = node
 
-            # Run all analysis on the class node
-            self._run_analysis(node)
+            self._check_principles(node)
 
-            # Visit child nodes with class context
             for child in ast.iter_child_nodes(node):
                 self.visit(child)
 
-            # Restore previous class context
             self._current_class = previous_class
             return
 
-        # Run analysis on other nodes
-        self._run_analysis(node)
+        self._check_principles(node)
 
-        # Continue visiting child nodes
         for child in ast.iter_child_nodes(node):
             self.visit(child)
 
-    def _run_analysis(self, node: ast.AST) -> None:
-        """Run all violation analysis on the given node."""
-        analyses = [
-            NamingViolations(self._current_class),
+    def _check_principles(self, node: ast.AST) -> None:
+        """Check all principles against the given node."""
+        principles = [
+            NoErNamePrinciple(self._current_class),
             CorePrinciples(self._current_class),
             AdvancedPrinciples(self._current_class),
         ]
 
-        for analysis in analyses:
-            violations = analysis.analyze(node)
+        for principle in principles:
+            violations = principle.check(node)
             for violation in violations:
-                self.errors.append((violation.line, violation.column, violation.message))
+                self.errors.append(
+                    (violation.line, violation.column, violation.message)
+                )
 
 
 # Entry point for flake8 plugin registration
-def factory(_app: Any) -> type[ElegantObjectsViolation]:
+def factory(_app: Any) -> type[ElegantObjectsPlugin]:
     """Factory function for flake8 plugin."""
-    return ElegantObjectsViolation
+    return ElegantObjectsPlugin

@@ -6,7 +6,7 @@ import sys
 
 from .advanced import AdvancedPrinciples
 from .core import CorePrinciples
-from .naming import NamingViolations
+from .naming import NoErNamePrinciple
 
 
 class ElegantObjectsAnalysis:
@@ -50,15 +50,17 @@ class ElegantObjectsAnalysis:
     def _run_analysis(self, node: ast.AST) -> None:
         """Run all violation analysis on the given node."""
         analyses = [
-            NamingViolations(self._current_class),
+            NoErNamePrinciple(self._current_class),
             CorePrinciples(self._current_class),
             AdvancedPrinciples(self._current_class),
         ]
 
         for analysis in analyses:
-            violations = analysis.analyze(node)
+            violations = analysis.check(node)
             for violation in violations:
-                self.errors.append((violation.line, violation.column, violation.message))
+                self.errors.append(
+                    (violation.line, violation.column, violation.message)
+                )
 
 
 def main() -> None:

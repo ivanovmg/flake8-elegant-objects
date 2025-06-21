@@ -2,53 +2,70 @@
 
 import ast
 
-from .base import ElegantObjectsAnalysis, ErrorCodes, Violation
+from .base import ErrorCodes, Principles, Violations
 
 
-class AdvancedPrinciples(ElegantObjectsAnalysis):
+class AdvancedPrinciples(Principles):
     """Checks for advanced EO principles: no static methods, no type discrimination, contracts, test purity, no ORM, no implementation inheritance."""
 
-    def analyze(self, node: ast.AST) -> list[Violation]:
-        """Analyze node for advanced principle violations."""
-        self._violations = []
+    def check(self, node: ast.AST) -> Violations:
+        """Check node for advanced principle violations."""
+        violations = []
 
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-            self._check_static_methods(node)
-            self._check_public_methods_contracts(node)
-            self._check_test_methods(node)
+            violations.extend(self._check_static_methods(node))
+            violations.extend(self._check_public_methods_contracts(node))
+            violations.extend(self._check_test_methods(node))
         elif isinstance(node, ast.Call):
-            self._check_isinstance_usage(node)
-            self._check_orm_patterns(node)
+            violations.extend(self._check_isinstance_usage(node))
+            violations.extend(self._check_orm_patterns(node))
         elif isinstance(node, ast.ClassDef):
-            self._check_implementation_inheritance(node)
+            violations.extend(self._check_implementation_inheritance(node))
 
-        return self._violations
+        return violations
 
-    def _check_static_methods(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def _check_static_methods(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> Violations:
         """Check for static methods violations."""
         # Check for @staticmethod decorator
         for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Name) and decorator.id in {"staticmethod", "classmethod"}:
-                self._add_violation(node, ErrorCodes.EO009.format(name=node.name))
+            if isinstance(decorator, ast.Name) and decorator.id in {
+                "staticmethod",
+                "classmethod",
+            }:
+                return self._violation(node, ErrorCodes.EO009.format(name=node.name))
+        return []
 
-    def _check_isinstance_usage(self, node: ast.Call) -> None:
+    def _check_isinstance_usage(self, node: ast.Call) -> Violations:
         """Check for isinstance, type casting, or reflection usage."""
         if isinstance(node.func, ast.Name):
-            forbidden_funcs = {"isinstance", "type", "hasattr", "getattr", "setattr", "delattr", "callable"}
+            forbidden_funcs = {
+                "isinstance",
+                "type",
+                "hasattr",
+                "getattr",
+                "setattr",
+                "delattr",
+                "callable",
+            }
             if node.func.id in forbidden_funcs:
-                self._add_violation(node, ErrorCodes.EO010)
+                return self._violation(node, ErrorCodes.EO010)
+        return []
 
-    def _check_public_methods_contracts(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def _check_public_methods_contracts(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> Violations:
         """Check if public methods have contracts (Protocol/ABC)."""
         # Skip private methods, special methods, and property decorators
         if node.name.startswith("_") or any(
             isinstance(d, ast.Name) and d.id == "property" for d in node.decorator_list
         ):
-            return
+            return []
 
         # Skip if not a method (no current class context)
         if not self._current_class or not self._is_method(node):
-            return
+            return []
 
         # Check if class implements a protocol or ABC
         has_contract = any(
@@ -66,37 +83,53 @@ class AdvancedPrinciples(ElegantObjectsAnalysis):
         # Also check for abstract decorators
         has_abstract_decorator = any(
             (isinstance(d, ast.Name) and d.id in {"abstractmethod", "abstractproperty"})
-            or (isinstance(d, ast.Attribute) and d.attr in {"abstractmethod", "abstractproperty"})
+            or (
+                isinstance(d, ast.Attribute)
+                and d.attr in {"abstractmethod", "abstractproperty"}
+            )
             for d in node.decorator_list
         )
 
         # Skip if class has contracts or method is abstract
         if has_contract or has_abstract_decorator:
-            return
+            return []
 
         # Public method without contract - violation
-        self._add_violation(node, ErrorCodes.EO011.format(name=node.name))
+        return self._violation(node, ErrorCodes.EO011.format(name=node.name))
 
-    def _check_test_methods(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def _check_test_methods(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> Violations:
         """Check that test methods only contain assertThat statements."""
         if not node.name.startswith("test_"):
-            return
+            return []
 
+        violations = []
         for stmt in node.body:
             if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
                 # Check if it's an assertThat call
                 if (
-                    isinstance(stmt.value.func, ast.Name) and stmt.value.func.id == "assertThat"
-                ) or (isinstance(stmt.value.func, ast.Attribute) and stmt.value.func.attr == "assertThat"):
+                    isinstance(stmt.value.func, ast.Name)
+                    and stmt.value.func.id == "assertThat"
+                ) or (
+                    isinstance(stmt.value.func, ast.Attribute)
+                    and stmt.value.func.attr == "assertThat"
+                ):
                     continue
-                self._add_violation(stmt, ErrorCodes.EO012.format(name=node.name))
+                violations.extend(
+                    self._violation(stmt, ErrorCodes.EO012.format(name=node.name))
+                )
             elif not isinstance(stmt, ast.Pass):  # Allow pass statements
-                self._add_violation(stmt, ErrorCodes.EO012.format(name=node.name))
+                violations.extend(
+                    self._violation(stmt, ErrorCodes.EO012.format(name=node.name))
+                )
 
-    def _check_orm_patterns(self, node: ast.Call) -> None:
+        return violations
+
+    def _check_orm_patterns(self, node: ast.Call) -> Violations:
         """Check for ORM/ActiveRecord patterns."""
         if not isinstance(node.func, ast.Attribute):
-            return
+            return []
 
         orm_methods = {
             "save",
@@ -133,7 +166,7 @@ class AdvancedPrinciples(ElegantObjectsAnalysis):
             "remove_column",
         }
         if node.func.attr not in orm_methods:
-            return
+            return []
 
         value = node.func.value
         if isinstance(value, ast.Name) and value.id in {
@@ -146,21 +179,22 @@ class AdvancedPrinciples(ElegantObjectsAnalysis):
             "float",
             "bool",
         }:
-            return
+            return []
 
         if isinstance(value, ast.Constant | ast.List | ast.Dict | ast.Tuple | ast.Set):
-            return
+            return []
 
         if (
             isinstance(value, ast.Call)
             and isinstance(value.func, ast.Name)
-            and value.func.id in {"open", "int", "str", "list", "dict", "set", "tuple", "bool", "float"}
+            and value.func.id
+            in {"open", "int", "str", "list", "dict", "set", "tuple", "bool", "float"}
         ):
-            return
+            return []
 
-        self._add_violation(node, ErrorCodes.EO013.format(name=node.func.attr))
+        return self._violation(node, ErrorCodes.EO013.format(name=node.func.attr))
 
-    def _check_implementation_inheritance(self, node: ast.ClassDef) -> None:
+    def _check_implementation_inheritance(self, node: ast.ClassDef) -> Violations:
         """Check for implementation inheritance violations."""
         for base in node.bases:
             is_abstract_base = False
@@ -206,4 +240,6 @@ class AdvancedPrinciples(ElegantObjectsAnalysis):
 
             # If not an abstract base, it's implementation inheritance
             if not is_abstract_base:
-                self._add_violation(node, ErrorCodes.EO014.format(name=node.name))
+                return self._violation(node, ErrorCodes.EO014.format(name=node.name))
+
+        return []

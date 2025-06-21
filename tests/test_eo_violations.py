@@ -2,7 +2,7 @@
 
 import ast
 
-from flake8_elegant_objects import ElegantObjectsViolation
+from flake8_elegant_objects import ElegantObjectsPlugin
 
 
 class TestEOViolations:
@@ -11,7 +11,7 @@ class TestEOViolations:
     def _check_code(self, code: str) -> list[tuple[int, int, str]]:
         """Helper to check code and return violations."""
         tree = ast.parse(code)
-        checker = ElegantObjectsViolation(tree)
+        checker = ElegantObjectsPlugin(tree)
         return [(line, col, msg) for line, col, msg, _ in checker.run()]
 
     def test_er_class_name_violation(self) -> None:
