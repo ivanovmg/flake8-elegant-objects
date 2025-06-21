@@ -1,0 +1,163 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flake8-elegant-objects"
+version = "1.0.0"
+description = "Flake8 plugin enforcing Elegant Objects principles: no -er naming, no null, no getters/setters, immutable objects"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Flake8 Elegant Objects Contributors" }]
+keywords = [
+    "flake8",
+    "elegant-objects",
+    "code-quality",
+    "static-analysis",
+    "python",
+    "linting",
+    "object-oriented",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Framework :: Flake8",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/AntonProkopyev/flake8-elegant-objects"
+Repository = "https://github.com/AntonProkopyev/flake8-elegant-objects.git"
+Issues = "https://github.com/AntonProkopyev/flake8-elegant-objects/issues"
+Documentation = "https://github.com/AntonProkopyev/flake8-elegant-objects#readme"
+
+[project.entry-points."flake8.extension"]
+EO = "flake8_elegant_objects:ElegantObjectsViolation"
+
+[project.scripts]
+flake8-elegant-objects = "flake8_elegant_objects:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.16.1",
+    "pytest>=8.4.1",
+    "ruff>=0.12.0",
+    "coverage[toml]>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "--strict-config",
+    "--strict-markers",
+    "--cov=flake8_elegant_objects",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+branch = true
+source = ["flake8_elegant_objects"]
+omit = ["*/tests/*", "*/test_*", "*/__main__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+skip_covered = false
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings  
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+    "ERA", # eradicate
+    "PL",  # pylint
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E501",    # line too long (handled by formatter)
+    "PLR0912", # too many branches (complex AST visitor)
+    "PLR0913", # too many arguments
+    "PLR2004", # magic value comparison
+    "SIM102",  # nested if statements (clearer in AST context)
+    "SIM114",  # combine if branches (clearer separate)
+    "PTH123",  # use pathlib (keep simple for main CLI)
+]
+
+[tool.ruff.lint.isort]
+force-single-line = false
+force-sort-within-sections = true
+single-line-exclusions = ["typing"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG", "S101", "PLR2004"]
+"flake8_elegant_objects/__init__.py" = [
+    "PLR0904",
+] # too many public methods (AST visitor)
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
