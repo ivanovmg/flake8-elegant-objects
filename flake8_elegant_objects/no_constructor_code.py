@@ -22,6 +22,7 @@ class NoConstructorCode:
         if node.name != "__init__" or not is_method(node):
             return []
 
+        violations = []
         # Constructors should only contain assignments to self.attribute = parameter
         for stmt in node.body:
             if isinstance(stmt, ast.Assign):
@@ -33,12 +34,12 @@ class NoConstructorCode:
                     if isinstance(target.value, ast.Name) and target.value.id == "self":
                         # This is a self.attr assignment, check if value is a simple name
                         if not isinstance(stmt.value, ast.Name):
-                            return violation(stmt, ErrorCodes.EO006)
+                            violations.extend(violation(stmt, ErrorCodes.EO006))
                     else:
-                        return violation(stmt, ErrorCodes.EO006)
+                        violations.extend(violation(stmt, ErrorCodes.EO006))
                 else:
-                    return violation(stmt, ErrorCodes.EO006)
+                    violations.extend(violation(stmt, ErrorCodes.EO006))
             elif not isinstance(stmt, ast.Pass):  # Allow pass statements
-                return violation(stmt, ErrorCodes.EO006)
+                violations.extend(violation(stmt, ErrorCodes.EO006))
 
-        return []
+        return violations

@@ -64,10 +64,14 @@ class Source:
     """Aggregation of AST node and current class context."""
 
     def __init__(
-        self, node: ast.AST, current_class: ast.ClassDef | None = None
+        self,
+        node: ast.AST,
+        current_class: ast.ClassDef | None = None,
+        tree: ast.AST | None = None,
     ) -> None:
         self._node = node
         self._current_class = current_class
+        self._tree = tree
 
     @property
     def node(self) -> ast.AST:
@@ -76,6 +80,10 @@ class Source:
     @property
     def current_class(self) -> ast.ClassDef | None:
         return self._current_class
+
+    @property
+    def tree(self) -> ast.AST | None:
+        return self._tree
 
 
 class Principle(Protocol):

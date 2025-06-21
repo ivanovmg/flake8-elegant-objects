@@ -17,6 +17,8 @@ class NoMutableObjects:
 
     def _check_mutable_class(self, node: ast.ClassDef) -> Violations:
         """Check for mutable class violations."""
+        violations = []
+
         # Look for @dataclass decorator without frozen=True
         has_dataclass = False
         has_frozen = False
@@ -40,7 +42,7 @@ class NoMutableObjects:
 
         # If it's a dataclass without frozen=True, it's mutable
         if has_dataclass and not has_frozen:
-            return violation(node, ErrorCodes.EO008.format(name=node.name))
+            violations.extend(violation(node, ErrorCodes.EO008.format(name=node.name)))
 
         # Check for mutable instance attributes in class body
         for stmt in node.body:
@@ -49,11 +51,11 @@ class NoMutableObjects:
                     if isinstance(target, ast.Name):
                         # This is a class attribute, check if it's mutable
                         if self._is_mutable_type(stmt.value):
-                            return violation(
-                                stmt, ErrorCodes.EO008.format(name=target.id)
+                            violations.extend(
+                                violation(stmt, ErrorCodes.EO008.format(name=target.id))
                             )
 
-        return []
+        return violations
 
     def _is_mutable_type(self, node: ast.AST) -> bool:
         """Check if a node represents a mutable type."""

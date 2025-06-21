@@ -236,10 +236,8 @@ class NoErNamePrinciple:
         if node.name in ("property", "getter", "setter"):
             return []
 
-        name = node.name.lower()
-
         # Check for procedural verbs
-        if self._starts_with_procedural_verb(name):
+        if self._starts_with_procedural_verb(node.name):
             # Determine if it's a method or standalone function
             error_code = ErrorCodes.EO002 if is_method(node) else ErrorCodes.EO004
             return violation(node, error_code.format(name=node.name))
@@ -294,7 +292,13 @@ class NoErNamePrinciple:
     def _starts_with_procedural_verb(self, name: str) -> bool:
         """Check if name starts with a procedural verb."""
         # Split camelCase/snake_case and check first word
-        words = re.findall(r"[a-z]+", name)
+        # First split on underscores, then on camelCase boundaries
+        words: list[str] = []
+        for part in name.split("_"):
+            # Split camelCase: insert space before uppercase letters
+            camel_split = re.sub(r"([a-z])([A-Z])", r"\1 \2", part)
+            words.extend(word.lower() for word in camel_split.split() if word)
+
         if not words:
             return False
 

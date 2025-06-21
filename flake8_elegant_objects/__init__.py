@@ -49,7 +49,7 @@ class ElegantObjectsPlugin:
         self, node: ast.AST, current_class: ast.ClassDef | None
     ) -> Iterator[Violation]:
         """Check all principles against the given node."""
-        source = Source(node, current_class)
+        source = Source(node, current_class, self.tree)
         principles: list[Principle] = [
             NoErNamePrinciple(),
             NoNull(),

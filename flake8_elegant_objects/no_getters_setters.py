@@ -22,6 +22,11 @@ class NoGettersSetters:
         if not is_method(node) or node.name.startswith("_"):
             return []
 
+        # Skip methods with @property decorator
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Name) and decorator.id == "property":
+                return []
+
         name = node.name.lower()
         original_name = node.name
 
