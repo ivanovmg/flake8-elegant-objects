@@ -3,7 +3,7 @@
 import ast
 
 from flake8_elegant_objects.base import Source
-from flake8_elegant_objects.naming import NoErNamePrinciple
+from flake8_elegant_objects.no_er_name import NoErName
 
 
 class TestNamingPrinciple:
@@ -12,7 +12,7 @@ class TestNamingPrinciple:
     def _check_code(self, code: str) -> list[str]:
         """Helper to check code and return violation messages."""
         tree = ast.parse(code)
-        checker = NoErNamePrinciple()
+        checker = NoErName()
         violations = []
 
         def visit(node: ast.AST, current_class: ast.ClassDef | None = None) -> None:

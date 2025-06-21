@@ -18,14 +18,10 @@ class ErrorCodes:
     EO004 = (
         "EO004 Function name '{name}' violates -er principle (should be noun, not verb)"
     )
-
-    # Core EO principles (EO005-EO008)
     EO005 = "EO005 Null (None) usage violates EO principle (avoid None)"
     EO006 = "EO006 Code in constructor violates EO principle (constructors should only assign parameters)"
     EO007 = "EO007 Getter/setter method '{name}' violates EO principle (avoid getters/setters)"
     EO008 = "EO008 Mutable object violation: '{name}' should be immutable"
-
-    # Advanced EO principles (EO009-EO014)
     EO009 = (
         "EO009 Static method '{name}' violates EO principle (no static methods allowed)"
     )
@@ -111,20 +107,30 @@ def is_method(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
 def get_all_principles() -> list[Principle]:
     """Get all available Elegant Objects principle checkers."""
     # Import here to avoid circular imports
-    from .advanced import AdvancedPrinciples
-    from .naming import NoErNamePrinciple
     from .no_constructor_code import NoConstructorCode
+    from .no_er_name import NoErName
     from .no_getters_setters import NoGettersSetters
+    from .no_implementation_inheritance import NoImplementationInheritance
+    from .no_impure_tests import NoImpureTests
     from .no_mutable_objects import NoMutableObjects
     from .no_null import NoNull
+    from .no_orm import NoOrm
+    from .no_public_methods_without_contracts import NoPublicMethodsWithoutContracts
+    from .no_static import NoStatic
+    from .no_type_discrimination import NoTypeDiscrimination
 
     return [
-        NoErNamePrinciple(),
+        NoErName(),
         NoNull(),
         NoConstructorCode(),
         NoGettersSetters(),
         NoMutableObjects(),
-        AdvancedPrinciples(),
+        NoStatic(),
+        NoTypeDiscrimination(),
+        NoPublicMethodsWithoutContracts(),
+        NoImpureTests(),
+        NoOrm(),
+        NoImplementationInheritance(),
     ]
 
 

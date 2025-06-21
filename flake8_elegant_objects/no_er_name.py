@@ -7,7 +7,7 @@ from typing import ClassVar
 from .base import ErrorCodes, Source, Violations, is_method, violation
 
 
-class NoErNamePrinciple:
+class NoErName:
     """Checks for naming violations in classes, methods, variables, and functions."""
 
     # Hall of shame: common -er suffixes (from elegantobjects.org)

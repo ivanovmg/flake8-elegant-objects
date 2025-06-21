@@ -107,7 +107,7 @@ class TestUser:
 """
         violations = self._check_code(code)
         test_violations = [v for v in violations if "EO012" in v[2]]
-        assert len(test_violations) == 4  # x=5, print, user=User(), assert
+        assert len(test_violations) == 3  # x=5, print, user=User() (assert is valid)
 
     def test_procedural_function_name_violation(self) -> None:
         """Test detection of procedural function names."""
