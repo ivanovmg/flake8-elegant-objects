@@ -2,15 +2,16 @@
 
 import ast
 
-from .base import ErrorCodes, Principles, Violations
+from .base import ErrorCodes, Source, Violations, is_method, violation
 
 
-class CorePrinciples(Principles):
+class CorePrinciples:
     """Checks for core EO principles: no null, no constructor code, no getters/setters, no mutable objects."""
 
-    def check(self, node: ast.AST) -> Violations:
-        """Check node for core principle violations."""
+    def check(self, source: Source) -> Violations:
+        """Check source for core principle violations."""
         violations = []
+        node = source.node
 
         if isinstance(node, ast.Constant):
             violations.extend(self._check_none_usage(node))
@@ -25,14 +26,14 @@ class CorePrinciples(Principles):
     def _check_none_usage(self, node: ast.Constant) -> Violations:
         """Check for None usage violations."""
         if node.value is None:
-            return self._violation(node, ErrorCodes.EO005)
+            return violation(node, ErrorCodes.EO005)
         return []
 
     def _check_constructor_code(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
     ) -> Violations:
         """Check for code in constructors beyond parameter assignments."""
-        if node.name != "__init__" or not self._is_method(node):
+        if node.name != "__init__" or not is_method(node):
             return []
 
         # Constructors should only contain assignments to self.attribute = parameter
@@ -46,13 +47,13 @@ class CorePrinciples(Principles):
                     if isinstance(target.value, ast.Name) and target.value.id == "self":
                         # This is a self.attr assignment, check if value is a simple name
                         if not isinstance(stmt.value, ast.Name):
-                            return self._violation(stmt, ErrorCodes.EO006)
+                            return violation(stmt, ErrorCodes.EO006)
                     else:
-                        return self._violation(stmt, ErrorCodes.EO006)
+                        return violation(stmt, ErrorCodes.EO006)
                 else:
-                    return self._violation(stmt, ErrorCodes.EO006)
+                    return violation(stmt, ErrorCodes.EO006)
             elif not isinstance(stmt, ast.Pass):  # Allow pass statements
-                return self._violation(stmt, ErrorCodes.EO006)
+                return violation(stmt, ErrorCodes.EO006)
 
         return []
 
@@ -60,7 +61,7 @@ class CorePrinciples(Principles):
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
     ) -> Violations:
         """Check for getter/setter methods."""
-        if not self._is_method(node) or node.name.startswith("_"):
+        if not is_method(node) or node.name.startswith("_"):
             return []
 
         name = node.name.lower()
@@ -76,7 +77,7 @@ class CorePrinciples(Principles):
             )
             or name == "get"
         ):
-            return self._violation(node, ErrorCodes.EO007.format(name=node.name))
+            return violation(node, ErrorCodes.EO007.format(name=node.name))
 
         # Check for setter patterns
         if (
@@ -88,7 +89,7 @@ class CorePrinciples(Principles):
             )
             or name == "set"
         ):
-            return self._violation(node, ErrorCodes.EO007.format(name=node.name))
+            return violation(node, ErrorCodes.EO007.format(name=node.name))
 
         return []
 
@@ -117,7 +118,7 @@ class CorePrinciples(Principles):
 
         # If it's a dataclass without frozen=True, it's mutable
         if has_dataclass and not has_frozen:
-            return self._violation(node, ErrorCodes.EO008.format(name=node.name))
+            return violation(node, ErrorCodes.EO008.format(name=node.name))
 
         # Check for mutable instance attributes in class body
         for stmt in node.body:
@@ -126,7 +127,7 @@ class CorePrinciples(Principles):
                     if isinstance(target, ast.Name):
                         # This is a class attribute, check if it's mutable
                         if self._is_mutable_type(stmt.value):
-                            return self._violation(
+                            return violation(
                                 stmt, ErrorCodes.EO008.format(name=target.id)
                             )
 

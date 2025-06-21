@@ -1,7 +1,7 @@
 """Base classes and protocols for Elegant Objects checkers."""
 
-from abc import ABC, abstractmethod
 import ast
+from typing import Protocol
 
 
 class ErrorCodes:
@@ -60,24 +60,41 @@ class Violation:
 Violations = list[Violation]
 
 
-class Principles(ABC):
-    """Base class for Elegant Objects principles analysis."""
+class Source:
+    """Aggregation of AST node and current class context."""
 
-    def __init__(self, current_class: ast.ClassDef | None = None) -> None:
+    def __init__(
+        self, node: ast.AST, current_class: ast.ClassDef | None = None
+    ) -> None:
+        self._node = node
         self._current_class = current_class
 
-    @abstractmethod
-    def check(self, node: ast.AST) -> Violations:
-        """Check node for violations and return list of detected violations."""
+    @property
+    def node(self) -> ast.AST:
+        return self._node
 
-    def _violation(self, node: ast.AST, message: str) -> Violations:
-        """Create a violation if node has location information."""
-        if hasattr(node, "lineno") and hasattr(node, "col_offset"):
-            return [Violation(node.lineno, node.col_offset, message)]
-        return []
+    @property
+    def current_class(self) -> ast.ClassDef | None:
+        return self._current_class
 
-    def _is_method(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
-        """Check if function is a method (has self parameter)."""
-        if not node.args.args:
-            return False
-        return node.args.args[0].arg in ("self", "cls")
+
+class Principle(Protocol):
+    """Protocol for Elegant Objects principles analysis."""
+
+    def check(self, source: Source) -> Violations:
+        """Check source for violations and return list of detected violations."""
+        ...
+
+
+def violation(node: ast.AST, message: str) -> Violations:
+    """Create a violation if node has location information."""
+    if hasattr(node, "lineno") and hasattr(node, "col_offset"):
+        return [Violation(node.lineno, node.col_offset, message)]
+    return []
+
+
+def is_method(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    """Check if function is a method (has self parameter)."""
+    if not node.args.args:
+        return False
+    return node.args.args[0].arg in ("self", "cls")

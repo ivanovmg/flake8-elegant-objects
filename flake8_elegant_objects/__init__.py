@@ -11,7 +11,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from .advanced import AdvancedPrinciples
-from .base import Violation
+from .base import Principle, Source, Violation
 from .core import CorePrinciples
 from .naming import NoErNamePrinciple
 
@@ -46,14 +46,15 @@ class ElegantObjectsPlugin:
         self, node: ast.AST, current_class: ast.ClassDef | None
     ) -> Iterator[Violation]:
         """Check all principles against the given node."""
-        principles = [
-            NoErNamePrinciple(current_class),
-            CorePrinciples(current_class),
-            AdvancedPrinciples(current_class),
+        source = Source(node, current_class)
+        principles: list[Principle] = [
+            NoErNamePrinciple(),
+            CorePrinciples(),
+            AdvancedPrinciples(),
         ]
 
         for principle in principles:
-            violations = principle.check(node)
+            violations = principle.check(source)
             yield from violations
 
 

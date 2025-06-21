@@ -4,10 +4,10 @@ import ast
 import re
 from typing import ClassVar
 
-from .base import ErrorCodes, Principles, Violations
+from .base import ErrorCodes, Source, Violations, is_method, violation
 
 
-class NoErNamePrinciple(Principles):
+class NoErNamePrinciple:
     """Checks for naming violations in classes, methods, variables, and functions."""
 
     # Hall of shame: common -er suffixes (from elegantobjects.org)
@@ -189,9 +189,10 @@ class NoErNamePrinciple(Principles):
         "user",
     }
 
-    def check(self, node: ast.AST) -> Violations:
-        """Check node for naming violations."""
+    def check(self, source: Source) -> Violations:
+        """Check source for naming violations."""
         violations = []
+        node = source.node
 
         if isinstance(node, ast.ClassDef):
             violations.extend(self._check_class_name(node))
@@ -215,11 +216,11 @@ class NoErNamePrinciple(Principles):
         # Check for -er suffixes (the hall of shame)
         for suffix in self.ER_SUFFIXES:
             if name.endswith(suffix):
-                return self._violation(node, ErrorCodes.EO001.format(name=node.name))
+                return violation(node, ErrorCodes.EO001.format(name=node.name))
 
         # Check for procedural patterns in compound names
         if self._contains_procedural_pattern(name):
-            return self._violation(node, ErrorCodes.EO001.format(name=node.name))
+            return violation(node, ErrorCodes.EO001.format(name=node.name))
 
         return []
 
@@ -240,8 +241,8 @@ class NoErNamePrinciple(Principles):
         # Check for procedural verbs
         if self._starts_with_procedural_verb(name):
             # Determine if it's a method or standalone function
-            error_code = ErrorCodes.EO002 if self._is_method(node) else ErrorCodes.EO004
-            return self._violation(node, error_code.format(name=node.name))
+            error_code = ErrorCodes.EO002 if is_method(node) else ErrorCodes.EO004
+            return violation(node, error_code.format(name=node.name))
 
         return []
 
@@ -274,11 +275,11 @@ class NoErNamePrinciple(Principles):
         # Check for -er suffixes
         for suffix in self.ER_SUFFIXES:
             if name.endswith(suffix):
-                return self._violation(node, ErrorCodes.EO003.format(name=node.id))
+                return violation(node, ErrorCodes.EO003.format(name=node.id))
 
         # Check for procedural verbs as variable names
         if self._starts_with_procedural_verb(name):
-            return self._violation(node, ErrorCodes.EO003.format(name=node.id))
+            return violation(node, ErrorCodes.EO003.format(name=node.id))
 
         return []
 

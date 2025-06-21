@@ -2,19 +2,22 @@
 
 import ast
 
-from .base import ErrorCodes, Principles, Violations
+from .base import ErrorCodes, Source, Violations, is_method, violation
 
 
-class AdvancedPrinciples(Principles):
+class AdvancedPrinciples:
     """Checks for advanced EO principles: no static methods, no type discrimination, contracts, test purity, no ORM, no implementation inheritance."""
 
-    def check(self, node: ast.AST) -> Violations:
-        """Check node for advanced principle violations."""
+    def check(self, source: Source) -> Violations:
+        """Check source for advanced principle violations."""
         violations = []
+        node = source.node
 
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             violations.extend(self._check_static_methods(node))
-            violations.extend(self._check_public_methods_contracts(node))
+            violations.extend(
+                self._check_public_methods_contracts(node, source.current_class)
+            )
             violations.extend(self._check_test_methods(node))
         elif isinstance(node, ast.Call):
             violations.extend(self._check_isinstance_usage(node))
@@ -34,7 +37,7 @@ class AdvancedPrinciples(Principles):
                 "staticmethod",
                 "classmethod",
             }:
-                return self._violation(node, ErrorCodes.EO009.format(name=node.name))
+                return violation(node, ErrorCodes.EO009.format(name=node.name))
         return []
 
     def _check_isinstance_usage(self, node: ast.Call) -> Violations:
@@ -50,11 +53,13 @@ class AdvancedPrinciples(Principles):
                 "callable",
             }
             if node.func.id in forbidden_funcs:
-                return self._violation(node, ErrorCodes.EO010)
+                return violation(node, ErrorCodes.EO010)
         return []
 
     def _check_public_methods_contracts(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        current_class: ast.ClassDef | None,
     ) -> Violations:
         """Check if public methods have contracts (Protocol/ABC)."""
         # Skip private methods, special methods, and property decorators
@@ -64,7 +69,7 @@ class AdvancedPrinciples(Principles):
             return []
 
         # Skip if not a method (no current class context)
-        if not self._current_class or not self._is_method(node):
+        if not current_class or not is_method(node):
             return []
 
         # Check if class implements a protocol or ABC
@@ -77,7 +82,7 @@ class AdvancedPrinciples(Principles):
                 and base.value.id in {"abc", "typing"}
                 and base.attr in {"Protocol", "ABC"}
             )
-            for base in self._current_class.bases
+            for base in current_class.bases
         )
 
         # Also check for abstract decorators
@@ -95,7 +100,7 @@ class AdvancedPrinciples(Principles):
             return []
 
         # Public method without contract - violation
-        return self._violation(node, ErrorCodes.EO011.format(name=node.name))
+        return violation(node, ErrorCodes.EO011.format(name=node.name))
 
     def _check_test_methods(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
@@ -117,11 +122,11 @@ class AdvancedPrinciples(Principles):
                 ):
                     continue
                 violations.extend(
-                    self._violation(stmt, ErrorCodes.EO012.format(name=node.name))
+                    violation(stmt, ErrorCodes.EO012.format(name=node.name))
                 )
             elif not isinstance(stmt, ast.Pass):  # Allow pass statements
                 violations.extend(
-                    self._violation(stmt, ErrorCodes.EO012.format(name=node.name))
+                    violation(stmt, ErrorCodes.EO012.format(name=node.name))
                 )
 
         return violations
@@ -192,7 +197,7 @@ class AdvancedPrinciples(Principles):
         ):
             return []
 
-        return self._violation(node, ErrorCodes.EO013.format(name=node.func.attr))
+        return violation(node, ErrorCodes.EO013.format(name=node.func.attr))
 
     def _check_implementation_inheritance(self, node: ast.ClassDef) -> Violations:
         """Check for implementation inheritance violations."""
@@ -240,6 +245,6 @@ class AdvancedPrinciples(Principles):
 
             # If not an abstract base, it's implementation inheritance
             if not is_abstract_base:
-                return self._violation(node, ErrorCodes.EO014.format(name=node.name))
+                return violation(node, ErrorCodes.EO014.format(name=node.name))
 
         return []
