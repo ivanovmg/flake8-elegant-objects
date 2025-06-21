@@ -11,6 +11,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from .advanced import AdvancedPrinciples
+from .base import Violation
 from .core import CorePrinciples
 from .naming import NoErNamePrinciple
 
@@ -23,48 +24,37 @@ class ElegantObjectsPlugin:
 
     def __init__(self, tree: ast.AST) -> None:
         self.tree = tree
-        self.errors: list[tuple[int, int, str]] = []
-        self._current_class: ast.ClassDef | None = None
 
     def run(self) -> Iterator[tuple[int, int, str, type["ElegantObjectsPlugin"]]]:
         """Run the checker and yield errors."""
-        self.visit(self.tree)
-        for line, col, msg in self.errors:
-            yield (line, col, msg, type(self))
+        for violation in self.visit(self.tree, None):
+            yield (violation.line, violation.column, violation.message, type(self))
 
-    def visit(self, node: ast.AST) -> None:
+    def visit(
+        self, node: ast.AST, current_class: ast.ClassDef | None = None
+    ) -> Iterator[Violation]:
         """Visit AST nodes and check for violations."""
         if isinstance(node, ast.ClassDef):
-            previous_class = self._current_class
-            self._current_class = node
+            current_class = node
 
-            self._check_principles(node)
-
-            for child in ast.iter_child_nodes(node):
-                self.visit(child)
-
-            self._current_class = previous_class
-            return
-
-        self._check_principles(node)
+        yield from self._check_principles(node, current_class)
 
         for child in ast.iter_child_nodes(node):
-            self.visit(child)
+            yield from self.visit(child, current_class)
 
-    def _check_principles(self, node: ast.AST) -> None:
+    def _check_principles(
+        self, node: ast.AST, current_class: ast.ClassDef | None
+    ) -> Iterator[Violation]:
         """Check all principles against the given node."""
         principles = [
-            NoErNamePrinciple(self._current_class),
-            CorePrinciples(self._current_class),
-            AdvancedPrinciples(self._current_class),
+            NoErNamePrinciple(current_class),
+            CorePrinciples(current_class),
+            AdvancedPrinciples(current_class),
         ]
 
         for principle in principles:
             violations = principle.check(node)
-            for violation in violations:
-                self.errors.append(
-                    (violation.line, violation.column, violation.message)
-                )
+            yield from violations
 
 
 # Entry point for flake8 plugin registration
