@@ -1,0 +1,44 @@
+"""No constructor code principle checker for Elegant Objects violations."""
+
+import ast
+
+from .base import ErrorCodes, Source, Violations, is_method, violation
+
+
+class NoConstructorCode:
+    """Checks for code in constructors beyond parameter assignments (EO006)."""
+
+    def check(self, source: Source) -> Violations:
+        """Check source for constructor code violations."""
+        node = source.node
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            return []
+        return self._check_constructor_code(node)
+
+    def _check_constructor_code(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> Violations:
+        """Check for code in constructors beyond parameter assignments."""
+        if node.name != "__init__" or not is_method(node):
+            return []
+
+        # Constructors should only contain assignments to self.attribute = parameter
+        for stmt in node.body:
+            if isinstance(stmt, ast.Assign):
+                # Check if it's a simple self.attr = param assignment
+                if len(stmt.targets) == 1 and isinstance(
+                    stmt.targets[0], ast.Attribute
+                ):
+                    target = stmt.targets[0]
+                    if isinstance(target.value, ast.Name) and target.value.id == "self":
+                        # This is a self.attr assignment, check if value is a simple name
+                        if not isinstance(stmt.value, ast.Name):
+                            return violation(stmt, ErrorCodes.EO006)
+                    else:
+                        return violation(stmt, ErrorCodes.EO006)
+                else:
+                    return violation(stmt, ErrorCodes.EO006)
+            elif not isinstance(stmt, ast.Pass):  # Allow pass statements
+                return violation(stmt, ErrorCodes.EO006)
+
+        return []

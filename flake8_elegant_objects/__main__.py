@@ -6,8 +6,11 @@ import sys
 
 from .advanced import AdvancedPrinciples
 from .base import Principle, Source
-from .core import NoConstructorCode, NoGettersSetters, NoMutableObjects, NoNull
 from .naming import NoErNamePrinciple
+from .no_constructor_code import NoConstructorCode
+from .no_getters_setters import NoGettersSetters
+from .no_mutable_objects import NoMutableObjects
+from .no_null import NoNull
 
 
 class ElegantObjectsAnalysis:
