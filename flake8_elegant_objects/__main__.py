@@ -6,7 +6,7 @@ import sys
 
 from .advanced import AdvancedPrinciples
 from .base import Principle, Source
-from .core import CorePrinciples
+from .core import NoConstructorCode, NoGettersSetters, NoMutableObjects, NoNull
 from .naming import NoErNamePrinciple
 
 
@@ -53,7 +53,10 @@ class ElegantObjectsAnalysis:
         source = Source(node, self._current_class)
         analyses: list[Principle] = [
             NoErNamePrinciple(),
-            CorePrinciples(),
+            NoNull(),
+            NoConstructorCode(),
+            NoGettersSetters(),
+            NoMutableObjects(),
             AdvancedPrinciples(),
         ]
 

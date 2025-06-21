@@ -5,29 +5,26 @@ import ast
 from .base import ErrorCodes, Source, Violations, is_method, violation
 
 
-class CorePrinciples:
-    """Checks for core EO principles: no null, no constructor code, no getters/setters, no mutable objects."""
+class NoNull:
+    """Checks for None usage violations (EO005)."""
 
     def check(self, source: Source) -> Violations:
-        """Check source for core principle violations."""
-        violations = []
+        """Check source for None usage violations."""
         node = source.node
-
-        if isinstance(node, ast.Constant):
-            violations.extend(self._check_none_usage(node))
-        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-            violations.extend(self._check_constructor_code(node))
-            violations.extend(self._check_getters_setters(node))
-        elif isinstance(node, ast.ClassDef):
-            violations.extend(self._check_mutable_class(node))
-
-        return violations
-
-    def _check_none_usage(self, node: ast.Constant) -> Violations:
-        """Check for None usage violations."""
-        if node.value is None:
+        if isinstance(node, ast.Constant) and node.value is None:
             return violation(node, ErrorCodes.EO005)
         return []
+
+
+class NoConstructorCode:
+    """Checks for code in constructors beyond parameter assignments (EO006)."""
+
+    def check(self, source: Source) -> Violations:
+        """Check source for constructor code violations."""
+        node = source.node
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            return []
+        return self._check_constructor_code(node)
 
     def _check_constructor_code(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
@@ -56,6 +53,17 @@ class CorePrinciples:
                 return violation(stmt, ErrorCodes.EO006)
 
         return []
+
+
+class NoGettersSetters:
+    """Checks for getter/setter methods (EO007)."""
+
+    def check(self, source: Source) -> Violations:
+        """Check source for getter/setter violations."""
+        node = source.node
+        if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            return []
+        return self._check_getters_setters(node)
 
     def _check_getters_setters(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
@@ -92,6 +100,17 @@ class CorePrinciples:
             return violation(node, ErrorCodes.EO007.format(name=node.name))
 
         return []
+
+
+class NoMutableObjects:
+    """Checks for mutable object violations (EO008)."""
+
+    def check(self, source: Source) -> Violations:
+        """Check source for mutable object violations."""
+        node = source.node
+        if not isinstance(node, ast.ClassDef):
+            return []
+        return self._check_mutable_class(node)
 
     def _check_mutable_class(self, node: ast.ClassDef) -> Violations:
         """Check for mutable class violations."""

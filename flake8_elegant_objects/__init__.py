@@ -12,7 +12,7 @@ from typing import Any
 
 from .advanced import AdvancedPrinciples
 from .base import Principle, Source, Violation
-from .core import CorePrinciples
+from .core import NoConstructorCode, NoGettersSetters, NoMutableObjects, NoNull
 from .naming import NoErNamePrinciple
 
 
@@ -49,7 +49,10 @@ class ElegantObjectsPlugin:
         source = Source(node, current_class)
         principles: list[Principle] = [
             NoErNamePrinciple(),
-            CorePrinciples(),
+            NoNull(),
+            NoConstructorCode(),
+            NoGettersSetters(),
+            NoMutableObjects(),
             AdvancedPrinciples(),
         ]
 
