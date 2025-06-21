@@ -10,7 +10,7 @@ class NoPublicMethodsWithoutContracts(Principle):
 
     def check(self, source: Source) -> Violations:
         """Check for public methods without contracts."""
-        violations = []
+        violations: Violations = []
 
         if not isinstance(source.node, ast.FunctionDef):
             return violations
