@@ -1,7 +1,7 @@
 # Flake8 ElegantObjects Plugin
 
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/AntonProkopyev/flake8-elegant-objects)
-[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen.svg)](https://github.com/AntonProkopyev/flake8-elegant-objects)
+[![Coverage](https://img.shields.io/badge/coverage-86%25-brightgreen.svg)](https://github.com/AntonProkopyev/flake8-elegant-objects)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -27,16 +27,27 @@ Detects violations of core Elegant Objects principles including the "-er" naming
 - `EO013`: ORM/ActiveRecord pattern violates EO principle
 - `EO014`: Implementation inheritance violates EO principle
 
+## Installation
+
+```bash
+pip install flake8-elegant-objects
+```
+
 ## Usage
 
 **Standalone:**
 
 ```bash
-python flake8/flake8_eo_plugin.py path/to/files/*.py
-python flake8/flake8_eo_plugin.py --show-source path/to/files/*.py
+python -m flake8_elegant_objects path/to/files/*.py
+python -m flake8_elegant_objects --show-source path/to/files/*.py
 ```
 
 **As flake8 plugin:**
+
+```bash
+flake8 --select=EO path/to/files/
+```
+
 The plugin is automatically registered when the package is installed.
 
 ## Philosophy
@@ -134,10 +145,42 @@ per-file-ignores =
     tests/*:EO012  # Allow non-assertThat in tests if needed
 ```
 
+## Development
+
 ### Testing
 
-Run the plugin tests:
+Run all tests:
 
 ```bash
-python -m pytest tests/test_eo_violations.py -v
+python -m pytest tests/ -v
+```
+
+### Code Quality
+
+```bash
+# Type checking
+mypy flake8_elegant_objects/
+
+# Linting and formatting
+ruff check flake8_elegant_objects/
+ruff format flake8_elegant_objects/
+```
+
+### Project Structure
+
+```
+flake8_elegant_objects/
+├── __init__.py          # Main plugin entry point
+├── base.py              # Base classes and utilities
+├── no_er_name.py        # EO001-EO004: No "-er" names
+├── no_null.py           # EO005: No None usage
+├── no_constructor_code.py # EO006: No code in constructors
+├── no_getters_setters.py  # EO007: No getters/setters
+├── no_mutable_objects.py  # EO008: No mutable objects
+├── no_static.py         # EO009: No static methods
+├── no_type_discrimination.py # EO010: No isinstance/type casting
+├── no_public_methods_without_contracts.py # EO011: Contracts required
+├── no_impure_tests.py   # EO012: Only assertThat in tests
+├── no_orm.py            # EO013: No ORM/ActiveRecord
+└── no_implementation_inheritance.py # EO014: No implementation inheritance
 ```
