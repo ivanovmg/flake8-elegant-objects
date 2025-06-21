@@ -106,3 +106,69 @@ def is_method(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
     if not node.args.args:
         return False
     return node.args.args[0].arg in ("self", "cls")
+
+
+def get_all_principles() -> list[Principle]:
+    """Get all available Elegant Objects principle checkers."""
+    # Import here to avoid circular imports
+    from .advanced import AdvancedPrinciples
+    from .naming import NoErNamePrinciple
+    from .no_constructor_code import NoConstructorCode
+    from .no_getters_setters import NoGettersSetters
+    from .no_mutable_objects import NoMutableObjects
+    from .no_null import NoNull
+
+    return [
+        NoErNamePrinciple(),
+        NoNull(),
+        NoConstructorCode(),
+        NoGettersSetters(),
+        NoMutableObjects(),
+        AdvancedPrinciples(),
+    ]
+
+
+class ElegantObjectsCore:
+    """Core analyzer for Elegant Objects violations."""
+
+    def __init__(self, tree: ast.AST) -> None:
+        self.tree = tree
+
+    def check_violations(self) -> list[Violation]:
+        """Check for all violations in the AST tree."""
+        violations = []
+        for violation in self._visit(self.tree, None):
+            violations.append(violation)
+        return violations
+
+    def _visit(
+        self, node: ast.AST, current_class: ast.ClassDef | None = None
+    ) -> list[Violation]:
+        """Visit AST nodes and check for violations."""
+        violations = []
+
+        if isinstance(node, ast.ClassDef):
+            current_class = node
+
+        # Check principles on current node
+        violations.extend(self._check_principles(node, current_class))
+
+        # Visit child nodes
+        for child in ast.iter_child_nodes(node):
+            violations.extend(self._visit(child, current_class))
+
+        return violations
+
+    def _check_principles(
+        self, node: ast.AST, current_class: ast.ClassDef | None
+    ) -> list[Violation]:
+        """Check all principles against the given node."""
+        violations = []
+        source = Source(node, current_class, self.tree)
+        principles = get_all_principles()
+
+        for principle in principles:
+            principle_violations = principle.check(source)
+            violations.extend(principle_violations)
+
+        return violations

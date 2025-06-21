@@ -15,7 +15,7 @@ class TestNoConstructorCodePrinciple:
         checker = NoConstructorCode()
         violations = []
 
-        def visit(node):
+        def visit(node: ast.AST) -> None:
             source = Source(node, None, tree)
             violations.extend(checker.check(source))
             for child in ast.iter_child_nodes(node):

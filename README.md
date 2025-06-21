@@ -1,5 +1,13 @@
 # Flake8 ElegantObjects Plugin
 
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/AntonProkopyev/flake8-elegant-objects)
+[![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen.svg)](https://github.com/AntonProkopyev/flake8-elegant-objects)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Type checked: mypy](https://img.shields.io/badge/type_checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
+[![Flake8](https://img.shields.io/badge/flake8-plugin-orange.svg)](https://flake8.pycqa.org/)
+
 Detects violations of core Elegant Objects principles including the "-er" naming principle, null usage, mutable objects, code in constructors, and getter/setter patterns.
 
 ## Error Codes

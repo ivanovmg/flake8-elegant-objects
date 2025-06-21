@@ -155,6 +155,9 @@ single-line-exclusions = ["typing"]
 "flake8_elegant_objects/__init__.py" = [
     "PLR0904",
 ] # too many public methods (AST visitor)
+"flake8_elegant_objects/base.py" = [
+    "PLC0415",
+] # late imports to avoid circular dependencies
 
 [tool.ruff.format]
 quote-style = "double"

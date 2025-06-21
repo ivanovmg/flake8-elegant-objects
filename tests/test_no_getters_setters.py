@@ -15,7 +15,7 @@ class TestNoGettersSettersPrinciple:
         checker = NoGettersSetters()
         violations = []
 
-        def visit(node, current_class=None):
+        def visit(node: ast.AST, current_class: ast.ClassDef | None = None) -> None:
             if isinstance(node, ast.ClassDef):
                 current_class = node
             source = Source(node, current_class, tree)

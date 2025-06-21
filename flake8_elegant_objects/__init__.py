@@ -10,13 +10,7 @@ import ast
 from collections.abc import Iterator
 from typing import Any
 
-from .advanced import AdvancedPrinciples
-from .base import Principle, Source, Violation
-from .naming import NoErNamePrinciple
-from .no_constructor_code import NoConstructorCode
-from .no_getters_setters import NoGettersSetters
-from .no_mutable_objects import NoMutableObjects
-from .no_null import NoNull
+from .base import ElegantObjectsCore
 
 
 class ElegantObjectsPlugin:
@@ -27,41 +21,13 @@ class ElegantObjectsPlugin:
 
     def __init__(self, tree: ast.AST) -> None:
         self.tree = tree
+        self._core = ElegantObjectsCore(tree)
 
     def run(self) -> Iterator[tuple[int, int, str, type["ElegantObjectsPlugin"]]]:
         """Run the checker and yield errors."""
-        for violation in self.visit(self.tree, None):
+        violations = self._core.check_violations()
+        for violation in violations:
             yield (violation.line, violation.column, violation.message, type(self))
-
-    def visit(
-        self, node: ast.AST, current_class: ast.ClassDef | None = None
-    ) -> Iterator[Violation]:
-        """Visit AST nodes and check for violations."""
-        if isinstance(node, ast.ClassDef):
-            current_class = node
-
-        yield from self._check_principles(node, current_class)
-
-        for child in ast.iter_child_nodes(node):
-            yield from self.visit(child, current_class)
-
-    def _check_principles(
-        self, node: ast.AST, current_class: ast.ClassDef | None
-    ) -> Iterator[Violation]:
-        """Check all principles against the given node."""
-        source = Source(node, current_class, self.tree)
-        principles: list[Principle] = [
-            NoErNamePrinciple(),
-            NoNull(),
-            NoConstructorCode(),
-            NoGettersSetters(),
-            NoMutableObjects(),
-            AdvancedPrinciples(),
-        ]
-
-        for principle in principles:
-            violations = principle.check(source)
-            yield from violations
 
 
 # Entry point for flake8 plugin registration
