@@ -2,6 +2,8 @@
 
 import ast
 
+import pytest
+
 from flake8_elegant_objects.base import Source
 from flake8_elegant_objects.no_mutable_objects import NoMutableObjects
 
@@ -165,3 +167,20 @@ class DataProcessor:
         # Instance attributes should not trigger this violation
         mutable_violations = [v for v in violations if "EO008" in v]
         assert len(mutable_violations) == 0
+
+    @pytest.mark.xfail(
+        reason="Incomplete implementation for attribute mutation",
+    )
+    def test_mutate_attribute_trigger(self) -> None:
+        code = """
+class DataProcessor:
+    def __init__(self):
+        self.data = []
+
+    def process(self):
+        self.data.append("something")
+"""
+        violations = self._check_code(code)
+        # Instance attributes should not trigger this violation
+        mutable_violations = [v for v in violations if "EO008" in v]
+        assert len(mutable_violations) == 1
