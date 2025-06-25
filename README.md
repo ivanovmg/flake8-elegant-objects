@@ -8,7 +8,7 @@
 [![Type checked: mypy](https://img.shields.io/badge/type_checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
 [![Flake8](https://img.shields.io/badge/flake8-plugin-orange.svg)](https://flake8.pycqa.org/)
 
-Detects violations of core Elegant Objects principles including the "-er" naming principle, null usage, mutable objects, code in constructors, and getter/setter patterns.
+Detects violations of core [Elegant Objects principles](https://www.elegantobjects.org/) including the "-er" naming principle, null usage, mutable objects, code in constructors, and getter/setter patterns.
 
 ## Error Codes
 
@@ -52,7 +52,7 @@ The plugin is automatically registered when the package is installed.
 
 ## Philosophy
 
-Based on Yegor Bugayenko's Elegant Objects principles, this plugin enforces object-oriented design that treats objects as living, thinking entities rather than data containers or procedure executors.
+Based on [Yegor Bugayenko](https://www.yegor256.com/)'s [Elegant Objects principles](https://www.elegantobjects.org/), this plugin enforces object-oriented design that treats objects as living, thinking entities rather than data containers or procedure executors.
 
 ### 1. No "-er" Entities (EO001-EO004)
 
