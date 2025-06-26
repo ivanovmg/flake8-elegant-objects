@@ -1,6 +1,7 @@
 """Unit tests for NoMutableObjects principle."""
 
 import ast
+from textwrap import dedent
 
 import pytest
 
@@ -172,15 +173,31 @@ class DataProcessor:
         reason="Incomplete implementation for attribute mutation",
     )
     def test_mutate_attribute_trigger(self) -> None:
-        code = """
-class DataProcessor:
-    def __init__(self):
-        self.data = []
+        code = dedent(
+            """\
+            class DataProcessor:
+                def __init__(self):
+                    self.data = []
 
-    def process(self):
-        self.data.append("something")
-"""
+                def process(self):
+                    self.data.append("something")
+            """,
+        )
         violations = self._check_code(code)
-        # Instance attributes should not trigger this violation
         mutable_violations = [v for v in violations if "EO008" in v]
         assert len(mutable_violations) == 1
+
+    def test_do_not_mutate_attribute_by_returning_new_instance_ok(self) -> None:
+        code = dedent(
+            """\
+            class DataProcessor:
+                def __init__(self, data):
+                    self.data = data or []
+
+                def process(self) -> DataProcessor:
+                    return DataProcessor(data=[*self.data, "something"])
+            """,
+        )
+        violations = self._check_code(code)
+        mutable_violations = [v for v in violations if "EO008" in v]
+        assert not mutable_violations
