@@ -169,10 +169,21 @@ class DataProcessor:
         mutable_violations = [v for v in violations if "EO008" in v]
         assert len(mutable_violations) == 0
 
-    @pytest.mark.xfail(
-        reason="Incomplete implementation for attribute mutation",
-    )
-    def test_mutate_attribute_trigger(self) -> None:
+    def test_mutate_class_attribute_via_reassign_triggers(self) -> None:
+        code = dedent(
+            """\
+            class DataProcessor:
+                attr = 0
+
+                def process(self):
+                    self.attr = 1
+            """,
+        )
+        violations = self._check_code(code)
+        mutable_violations = [v for v in violations if "EO008" in v]
+        assert len(mutable_violations) == 1
+
+    def test_mutate_attribute_via_append_triggers(self) -> None:
         code = dedent(
             """\
             class DataProcessor:
@@ -181,6 +192,21 @@ class DataProcessor:
 
                 def process(self):
                     self.data.append("something")
+            """,
+        )
+        violations = self._check_code(code)
+        mutable_violations = [v for v in violations if "EO008" in v]
+        assert len(mutable_violations) == 1
+
+    def test_mutate_attribute_via_direct_reassign_triggers(self) -> None:
+        code = dedent(
+            """\
+            class DataProcessor:
+                def __init__(self):
+                    self.data = 0
+
+                def process(self):
+                    self.data = 1
             """,
         )
         violations = self._check_code(code)
